@@ -3,51 +3,90 @@ import {
     useState,
     ChangeEvent,
     FormEvent,
-    useContext,
+    useEffect,
 } from 'react';
+import { match } from 'react-router-dom';
+import { connect } from 'react-redux';
+import { AppState } from '../../store';
+import { create, edit, update } from '../../store/todo/services';
 import { useHistory } from 'react-router-dom';
-import { Context as TodoContext } from '../../Contexts/todos/TodoContext';
 import Grid from '@material-ui/core/Grid';
 import FormDetails from '../../components/PageDetails/FormDetails';
 import Form from '../../components/FormControls/Form';
 import Input from '../../components/FormControls/Input';
 import FormSubmitOptions from '../../components/FormControls/FormSubmitOptions';
-import { mockLocalStorageKey } from '../../common/Constants';
-import { Todo } from '../../interfaces/TodoModels';
-import { createModel } from '../../helpers/dataResponse';
+import { Todo, TodoInitialState } from '../../interfaces/TodoModels';
 import Message, { MessageTypes } from '../../components/Utilities/Message';
+import { initialState } from '../../store/todo/reducer';
 
-const TodoForm: FC = (): JSX.Element => {
-    const [title, setTitle] = useState<string>('');
+interface TodoFormParams {
+    id: string;
+}
+
+interface TodoFormProps {
+    match?: match<TodoFormParams>;
+    todoState: TodoInitialState,
+    requestCreate: (model: Todo) => void;
+    requestEdit: (id: string) => void;
+    requestUpdate: (model: Todo) => void;
+}
+
+const TodoForm: FC<TodoFormProps> = ({
+    match,
+    todoState,
+    requestCreate,
+    requestEdit,
+    requestUpdate,
+}): JSX.Element => {
+    const [todo, setTodo] = useState<Todo>(initialState.model);
     const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
     const history = useHistory();
+    
     const {
-        dispatch
-    } = useContext(TodoContext);
+        // loading,
+        model,
+    } = todoState;
 
-    const handleInput = (event: ChangeEvent<HTMLInputElement>) => {
-        setTitle(event.target.value);
+    /**
+     * If the form is in edit mode, request Todo by id.
+     */
+    useEffect(() => {
+        const id: string | undefined = match?.params.id;
+        
+        if(id !== undefined){
+            requestEdit(id);
+        }
+    }, [match, requestEdit]);
+
+    /**
+     * Set the Todo, if in edit mode.
+     */
+    useEffect(() => {
+        if(model.id !== ''){
+            setTodo(model);
+        }
+    }, [model]);
+
+    const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+        setTodo({
+            ...todo,
+            [event.target.name]: event.target.value
+        });
     };
 
     const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
         event.preventDefault();
 
-        if(title.length === 0){
+        if(todo.title.length === 0){
             setErrorMessage('Title is required.');
             return;
         }
+        if(model.id === ''){
+            requestCreate({ id: new Date().getTime().toString(), title: model.title });
+        } else {
+            requestUpdate(todo);
+        }
         
-        const data: string | null = localStorage.getItem(mockLocalStorageKey);
-
-        const todos = JSON.parse(data as string) as Array<Todo>;
-        const todo: Todo = { id: new Date().getTime().toString(), title: title }
-        
-        localStorage.setItem(mockLocalStorageKey, JSON.stringify(createModel(todos, todo)));
-
-        dispatch({
-            type: 'ADD',
-            payload: todo
-        });
         history.push(`/`);
     };
 
@@ -68,9 +107,9 @@ const TodoForm: FC = (): JSX.Element => {
                 }
                 <Input
                     name='title'
-                    value={title}
+                    value={todo.title}
                     label='Title'
-                    handleChange={handleInput}
+                    handleChange={handleInputChange}
                 />
 
                 <FormSubmitOptions
@@ -81,4 +120,14 @@ const TodoForm: FC = (): JSX.Element => {
     );
 };
 
-export default TodoForm;
+const mapStateToProps = (state: AppState) => ({
+    todoState: state.todoState,
+});
+
+const mappDispatchProps = (dispatch: any) => ({
+    requestCreate: (model: Todo) => dispatch(create(model)),
+    requestEdit: (id: string) => dispatch(edit(id)),
+    requestUpdate: (model: Todo) => dispatch(update(model)),
+});
+
+export default connect(mapStateToProps, mappDispatchProps)(TodoForm);

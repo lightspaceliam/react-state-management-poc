@@ -1,12 +1,12 @@
 import {
     FC,
-    useState,
-    useContext,
     useEffect,
     MouseEvent,
 } from 'react';
-import { Context as TodoContext } from '../../Contexts/todos/TodoContext';
-import { Todo } from '../../interfaces/TodoModels';
+import { connect } from 'react-redux';
+import { AppState } from '../../store';
+import { read, del } from '../../store/todo/services';
+import { TodoInitialState, Todo } from '../../interfaces/TodoModels';
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
 import TableRow from '@material-ui/core/TableRow';
@@ -17,63 +17,57 @@ import Loader from '../../components/Lists/Loader';
 import Table from '../../components/Lists/Table';
 import IconLink from '../../components/Buttons/OptionLink';
 import PageDetails from '../../components/PageDetails/ListDetails';
-import { mockLocalStorageKey, mockDelay } from '../../common/Constants';
 
 import styles from './styles/list';
+import { Edit } from '@material-ui/icons';
+interface TodoListProps {
+    requestRead: () => void;
+    requestDelete: (id: string) => void;
+    todoState: TodoInitialState;
+}
 
-const TodoList: FC = (): JSX.Element => {
+const TodoList: FC<TodoListProps> = ({
+    requestRead,
+    requestDelete,
+    todoState,
+}): JSX.Element => {
     const classes = styles({});
-    const [loading, setLoading] = useState<boolean>(false);
 
     const {
-        state: { todos },
-        dispatch,
-    } = useContext(TodoContext);
+        loading,
+        errorMessage,
+        models,
+    } = todoState;
 
     useEffect(() => {
-        const data: string | null = localStorage.getItem(mockLocalStorageKey);
-        if(data !== null){
-            const items = JSON.parse(data as string) as Array<Todo>;
-
-            setLoading(true);
-            setTimeout(() => {  
-                dispatch({
-                    type: 'READ',
-                    payload: items
-                });
-                setLoading(false);
-            }, mockDelay);
-        }
-        
-    }, [dispatch]);
+        requestRead();
+    
+    }, [requestRead]);
 
     const handleDelete = (event: MouseEvent<HTMLAnchorElement>, id: string) => {
         event.preventDefault();
-        dispatch({
-            type: 'DELETE',
-            payload: id
-        });
+        requestDelete(id);
     };
 
     return (
         <Grid container>
             <PageDetails
                 title='Todo List'
-                totalRecords={todos.length}
+                totalRecords={models?.length || 0}
                 path='/new'
             />
             <Grid item xs={12}>
                 <Loader
                     loading={loading}
-                    message={undefined}
+                    message={errorMessage}
                     children={
                         <Table
                             ariaLabel='Todo list'
                             body={
                                 <>
-                                    {!todos.length
+                                    {!models?.length
                                         ? <NoRecords colSpan={2} />
-                                        : todos.map((p: Todo) => (
+                                        : models.map((p: Todo) => (
                                             <TableRow key={p.id}>
                                                 <TableCell>
                                                     <Typography variant='h6'>
@@ -82,6 +76,14 @@ const TodoList: FC = (): JSX.Element => {
                                                 </TableCell>
                                                 <TableCell align='center' width='8%'>
                                                     <span className={classes.options}>
+                                                        <IconLink
+                                                            ariaLabel='Edit list item'
+                                                            icon={<Edit />}
+                                                            path={`/`}
+                                                            id={p.id}
+                                                            handleClick={() => null}
+                                                        />
+
                                                         <IconLink
                                                             ariaLabel='Delete list item'
                                                             icon={<Delete />}
@@ -104,4 +106,13 @@ const TodoList: FC = (): JSX.Element => {
     );
 };
 
-export default TodoList;
+const mapStateToProps = (state: AppState) => ({
+    todoState: state.todoState,
+});
+
+const mappDispatchProps = (dispatch: any) => ({
+    requestRead: () => dispatch(read()),
+    requestDelete: (id: string) => dispatch(del(id)),
+});
+
+export default connect(mapStateToProps, mappDispatchProps)(TodoList);

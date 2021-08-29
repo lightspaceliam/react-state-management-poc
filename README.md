@@ -2,8 +2,11 @@
 
 ## Story
 
-As a React developer 
-I want to demonstrate the difference between React Context & Redux
+**As a** React developer 
+
+**I want to** demonstrate the difference between React Context & Redux
+
+**So that I can** make an informed decision about how I facilitate state management.
 
 Keeping in mind Context is not a state manager. It merely facilitates injecting state into subscribing components! In the Context branch, I have implemented React's:
 

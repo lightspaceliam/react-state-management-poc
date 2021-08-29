@@ -1,5 +1,5 @@
 {
-  "name": "react-context-poc",
+  "name": "react-state-management-poc",
   "version": "0.1.0",
   "private": true,
   "dependencies": {

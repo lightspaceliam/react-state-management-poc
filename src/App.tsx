@@ -1,19 +1,19 @@
-import { FC } from 'react';
-import { Provider as TodoProvider } from './contexts/todo/TodoContext';
-import TodoList from './components/TodoList';
-import AddTodo from './components/AddTodo';
+import { FC, useEffect } from 'react';
+import ApplicationRouter from './applicationRouter/ApplicationRouter';
+import { mockLocalStorageKey } from './common/Constants';
+import { todos } from './mockData/mockTodos';
 
 const App : FC = () => {
 
-	return (
-		<div>
-			<h1>Todos</h1>
-			<TodoProvider>
-				<TodoList />
-				<AddTodo />
-			</TodoProvider>
-		</div>
-  	);
+	//  HACK: seed local storage.
+    useEffect(() => {
+        const data: string | null = localStorage.getItem(mockLocalStorageKey);
+		
+		if(data === null){
+			localStorage.setItem(mockLocalStorageKey, JSON.stringify(todos));
+		}
+    }, []);
+	return <ApplicationRouter />;
 }
 
 export default App;

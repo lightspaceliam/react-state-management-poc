@@ -1,17 +1,16 @@
 import { Dispatch } from 'react';
+import { ModelBase } from './ModelBase';
 
-export interface Todo {
-    id: string;
+export interface Todo extends ModelBase {
     title: string;
-    isActive: boolean;
 }
 
-export interface TodoInitialState {
+export interface InitialTodoState {
     todos: Array<Todo>;
 }
 
 export interface ContextModel {
-    state: TodoInitialState;
+    state: InitialTodoState;
     dispatch: Dispatch<TodoActionTypes>;
 }
 

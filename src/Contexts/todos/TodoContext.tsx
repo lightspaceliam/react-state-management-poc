@@ -5,19 +5,20 @@ import {
 } from 'react';
 import {
     TodoActionTypes,
-    TodoInitialState,
+    InitialTodoState,
     ContextModel,
     Todo,
 } from '../../interfaces/TodoModels';
+import { todos } from '../../mockData/mockTodos';
 
-const defaultState: TodoInitialState = {
-    todos: []
+export const defaultState: InitialTodoState = {
+    todos: todos
 };
 
 const reducer = (
-    state: TodoInitialState,
+    state: InitialTodoState,
     action: TodoActionTypes,
-) : TodoInitialState => {
+) : InitialTodoState => {
 
     switch(action.type){
         case 'ADD':
@@ -36,7 +37,7 @@ const reducer = (
                 todos: state.todos.filter((p: Todo) => p.id !== action.payload),
             };
         default:
-            return state;
+            return defaultState;
     }
 };
 
@@ -44,7 +45,7 @@ export const Context = createContext({} as ContextModel);
 
 export const Provider: FC = ({ children }) => {
     const [state, dispatch] = useReducer(reducer, defaultState);
-
+    
     return (
         <Context.Provider value={{ state, dispatch }}>
             {children}
